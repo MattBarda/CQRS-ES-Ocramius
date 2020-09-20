@@ -7,6 +7,7 @@ namespace Building\Domain\Aggregate;
 use Building\Domain\DomainEvent\NewBuildingWasRegistered;
 use Building\Domain\DomainEvent\UserCheckedIn;
 use Building\Domain\DomainEvent\UserCheckedOut;
+use mysql_xdevapi\Exception;
 use Prooph\EventSourcing\AggregateRoot;
 use Rhumsaa\Uuid\Uuid;
 
@@ -21,6 +22,11 @@ final class Building extends AggregateRoot
      * @var string
      */
     private $name;
+
+    /**
+     * @var null[] indexed by username
+     */
+    private $checkedInUsers = [];
 
     public static function new(string $name) : self
     {
@@ -38,6 +44,10 @@ final class Building extends AggregateRoot
 
     public function checkInUser(string $username)
     {
+        if (array_key_exists($username, $this->checkedInUsers)) {
+            throw new \DomainException("User {$username} has already checked in.");
+        }
+
         $this->recordThat(UserCheckedIn::occur(
             $this->uuid->toString(),
             [
@@ -48,6 +58,10 @@ final class Building extends AggregateRoot
 
     public function checkOutUser(string $username)
     {
+        if (! array_key_exists($username, $this->checkedInUsers)) {
+            throw new \DomainException("User {$username} hasn't checked in.");
+        }
+
         $this->recordThat(UserCheckedOut::occur(
             $this->uuid->toString(),
             [
@@ -62,14 +76,14 @@ final class Building extends AggregateRoot
         $this->name = $event->name();
     }
 
-    protected function whenUserCheckedIn()
+    protected function whenUserCheckedIn(UserCheckedIn $event)
     {
-        // ignore for now
+        $this->checkedInUsers[$event->username()] = null;
     }
 
-    protected function whenUserCheckedOut()
+    protected function whenUserCheckedOut(UserCheckedOut $event)
     {
-        // ignore for now
+        unset($this->checkedInUsers[$event->username()]);
     }
 
     /**
