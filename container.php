@@ -11,6 +11,7 @@ use Bernard\QueueFactory;
 use Bernard\QueueFactory\PersistentFactory;
 use Building\Domain\Aggregate\Building;
 use Building\Domain\Command;
+use Building\Domain\DomainEvent\CheckInAnomalyDetected;
 use Building\Domain\Repository\BuildingRepositoryInterface;
 use Building\Infrastructure\Repository\BuildingRepository;
 use Doctrine\DBAL\Connection;
@@ -215,6 +216,27 @@ return new ServiceManager([
                 $buildings->get(Uuid::fromString($command->buildingId()))
                     ->checkOutUser($command->username());
             };
+        },
+        Command\NotifySecurityOfBreach::class => function (ContainerInterface $container) : callable {
+            return function (Command\NotifySecurityOfBreach $command) {
+                error_log(sprintf(
+                    'Security breach in %s by %s',
+                    $command->buildingId()->toString(),
+                    $command->username()
+                ));
+            };
+        },
+        CheckInAnomalyDetected::class . '-listeners' => function(ContainerInterface $container) : array {
+            $commandBus = $container->get(CommandBus::class);
+
+            return [
+                function (CheckInAnomalyDetected $anomalyDetected) use ($commandBus){
+                    $commandBus->dispatch(Command\NotifySecurityOfBreach::fromBuildingAndUsername(
+                        Uuid::fromString($anomalyDetected->aggregateId()),
+                        $anomalyDetected->username()
+                    ));
+                }
+            ];
         },
         BuildingRepositoryInterface::class => function (ContainerInterface $container) : BuildingRepositoryInterface {
             return new BuildingRepository(
