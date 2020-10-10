@@ -8,7 +8,6 @@ use Building\Domain\DomainEvent\CheckInAnomalyDetected;
 use Building\Domain\DomainEvent\NewBuildingWasRegistered;
 use Building\Domain\DomainEvent\UserCheckedIn;
 use Building\Domain\DomainEvent\UserCheckedOut;
-use mysql_xdevapi\Exception;
 use Prooph\EventSourcing\AggregateRoot;
 use Rhumsaa\Uuid\Uuid;
 
@@ -85,7 +84,7 @@ final class Building extends AggregateRoot
         }
     }
 
-    public function whenNewBuildingWasRegistered(NewBuildingWasRegistered $event)
+    protected function whenNewBuildingWasRegistered(NewBuildingWasRegistered $event)
     {
         $this->uuid = $event->uuid();
         $this->name = $event->name();
