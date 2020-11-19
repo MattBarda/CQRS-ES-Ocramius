@@ -33,6 +33,16 @@ The MVP of the application has following specification:
  * prevent people from double-leaving a building (security concern)
  * allow querying a list of people that are currently in the building
 
+#### Run the application
+
+1. cd to project
+2. run ```php -S localhost:8080 -t public/```
+3. go to localhost:8080 in your browser
+4. Create a building
+5. access a building page to check in and checkout: 
+```http://localhost:8080/building/143e3f3e-ef3f-428e-b04d-52b991616053```
+
+
 #### Build steps
 
 Following steps are to be implemented:
